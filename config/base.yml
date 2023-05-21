@@ -73,7 +73,7 @@ dataset:
 
 w2v:
   enable: No
-  w2v_path: data/pretrained_models/word2vec/w2v.model
+  w2v_path: cl4ac/data/pretrained_models/word2vec/w2v.model
   trainable: No
   random_init: No
 

@@ -6,10 +6,10 @@ from w2v_tools.create_dataset import clean_sentence
 
 
 class Word2Vec:
-    def __init__(self, w2v_model_path='data/pretrained_models/word2vec/w2v.model', multisos=False):
+    def __init__(self, w2v_model_path='cl4ac/data/pretrained_models/word2vec/w2v.model', multisos=False):
         w2v_model = W2V.load(w2v_model_path)
         self.w2v_model = w2v_model
-        self.vocabulary = list(w2v_model.wv.vocab.keys())
+        self.vocabulary = list(w2v_model.wv.key_to_index.keys())
         self.vocab_size = len(self.vocabulary)
         # do the similar thing like BERT tokenizer
         self.mask_token = '<eos>'
