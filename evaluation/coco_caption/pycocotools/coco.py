@@ -56,7 +56,7 @@ import matplotlib.pyplot as plt
 from matplotlib.collections import PatchCollection
 from matplotlib.patches import Polygon
 import numpy as np
-from skimage.draw import polygon
+# from skimage.draw import polygon
 import copy
 
 class COCO:
@@ -360,19 +360,3 @@ class COCO:
         return {'size':      [h, w],
                'counts':    counts_list ,
                }
-
-    @staticmethod
-    def segToMask( S, h, w ):
-         """
-         Convert polygon segmentation to binary mask.
-         :param   S (float array)   : polygon segmentation mask
-         :param   h (int)           : target mask height
-         :param   w (int)           : target mask width
-         :return: M (bool 2D array) : binary mask
-         """
-         M = np.zeros((h,w), dtype=np.bool)
-         for s in S:
-             N = len(s)
-             rr, cc = polygon(np.array(s[1:N:2]), np.array(s[0:N:2])) # (y, x)
-             M[rr, cc] = 1
-         return M

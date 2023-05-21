@@ -31,7 +31,7 @@ def extend_list(extend_me, extend_by):
 def get_config(path):
     with open(path, 'r') as file:
         configuration = yaml.load(file, Loader=yaml.FullLoader)
-    with open('config/base.yml', 'r') as file:
+    with open('cl4ac/config/base.yml', 'r') as file:
         base_configuration = yaml.load(file, Loader=yaml.FullLoader)
     configuration = DotMap(configuration)
     base_configuration = DotMap(base_configuration)

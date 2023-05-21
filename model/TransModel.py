@@ -6,7 +6,7 @@ import torch.nn as nn
 from torch.nn import TransformerEncoder, TransformerEncoderLayer, TransformerDecoder, TransformerDecoderLayer
 from transformers import AutoModel, AutoTokenizer
 
-from bert_tools.custom_tokenizer import CUSTOM_TOKENIZER
+# from bert_tools.custom_tokenizer import CUSTOM_TOKENIZER
 from config_loader.bert_config import BERT_MODELS
 from model.Encoder import Cnn10
 from w2v_tools.w2v_model import Word2Vec

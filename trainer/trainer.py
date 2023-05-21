@@ -4,7 +4,7 @@ import numpy as np
 import random
 from warmup_scheduler import GradualWarmupScheduler
 from datetime import datetime
-from bert_tools.custom_tokenizer import CUSTOM_TOKENIZER
+# from bert_tools.custom_tokenizer import CUSTOM_TOKENIZER
 from data_loader.clotho_dataset import ClothoDataset, get_dataloader
 from evaluation.eval_model import eval_model
 from model.TransModel import TransformerModel
