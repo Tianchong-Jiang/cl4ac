@@ -36,8 +36,7 @@ class ClothoDataset(Dataset):
         self.config = config
         self.caption_path = caption_path
         self.is_train = is_train
-        self.audio_loader = LogmelLoader(h5_path=config.dataset.audio_h5_path,
-                                         wav_name_path=config.dataset.wave_name_path)
+        self.audio_loader = LogmelLoader(caption_path)
         if is_train:
             self.audio_captions, self.filename_with_captions = read_cloth_file(caption_path, self.audio_loader)
         else:

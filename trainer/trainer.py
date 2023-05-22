@@ -16,6 +16,7 @@ from trainer.optimizer import get_optimizer
 from utils.save_load_model import save_model
 from w2v_tools.w2v_model import Word2Vec
 import os
+import wandb
 
 
 def train(config, device):
@@ -127,6 +128,9 @@ def train(config, device):
                 tokenizer.decode(first_token_ids)
             ))
             steps += 1
+
+            # log loss
+            wandb.log({"loss": loss, "step": steps})
 
         valid_metrics, valid_ground_truth, valid_predicted, beam_valid_metrics, beam_valid_predicted = eval_model(model,
                                                                                                                   valid_loader,
