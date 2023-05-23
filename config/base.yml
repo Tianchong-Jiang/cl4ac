@@ -34,7 +34,7 @@ bert:
   use_sep_as_pad: No
   use_custom_tokenizer: No
   auto_regressive: Yes
-  auto_regressive_gamma: 0.9
+  auto_regressive_gamma: 1
 
 
 decoder:
@@ -57,13 +57,14 @@ criteria:
 training:
   epoch: 30
   seed: 36
-  grad_clip: 2.0
+  grad_clip: 10.0
   batch_size: 4
   beam_width: 2
   # Will reduce the weight on [PAD] a an the ...
   # Will increase the weight caption words
   activate_weight_on_loss:
-    enable: No
+    enable: Yes
+    alpha: 5
     reduce_punc_weight: No
     reduce_stopwords_weight: No
 
@@ -78,6 +79,6 @@ multisos:
   enable: No
 
 auxiliary_task:
-  pooling_type: 'max'
+  pooling_type: 'mean'
   selection_loss: Yes
   use_last_hidden: Yes

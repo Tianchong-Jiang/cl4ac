@@ -38,10 +38,11 @@ def train(config, device):
     valid_loader = get_dataloader(valid_dataset, config, tokenizer, is_train=False, multisos=config.multisos.enable)
     test_loader = get_dataloader(test_dataset, config, tokenizer, is_train=False, multisos=config.multisos.enable)
     model = TransformerModel(config).to(device)
+    auxilary_criteria = get_loss(config)
     criteria = get_loss(config)
     optimizer = get_optimizer(config, model)
     if config.training.activate_weight_on_loss.enable:
-        addition_weight_ratio = train_dataset.get_word_frequency(tokenizer)
+        addition_weight_ratio = train_dataset.get_word_frequency(tokenizer, config)
         weight = calculating_weight(tokenizer, addition_weight_ratio,
                                     reduce_punc=config.training.activate_weight_on_loss.reduce_punc_weight,
                                     reduce_stopwords=config.training.activate_weight_on_loss.reduce_punc_weight)
@@ -98,7 +99,7 @@ def train(config, device):
                                                     max_non_pad_indexes=max_neg_non_pad_indexes)
                 selection_labels = [1] * selection_score.shape[0] + [0] * negative_selection_score.shape[0]
                 pos_neg_selection_scores = torch.cat([selection_score, negative_selection_score])
-                selection_loss = criteria(pos_neg_selection_scores,
+                selection_loss = auxilary_criteria(pos_neg_selection_scores,
                                           torch.tensor(selection_labels).to(device).contiguous().view(-1))
             if config.bert.auto_regression and config.bert.auto_regressive_gamma < 1.0:
                 losses = None

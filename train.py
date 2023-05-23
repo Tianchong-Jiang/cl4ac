@@ -1,5 +1,5 @@
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "1" #str(cvd)
+os.environ["CUDA_VISIBLE_DEVICES"] = "0" #str(cvd)
 import argparse
 from config_loader.config import get_config
 from trainer.trainer import train
@@ -14,10 +14,10 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--config', default= 'cl4ac/config/base.yml')
 parser.add_argument('--freeze_bert', type=str2bool, default=None)
 parser.add_argument('--freeze_cnn', type=str2bool, default=None)
-parser.add_argument('--batch', type=int, default=4)
+parser.add_argument('--batch', type=int, default=None)
 parser.add_argument('--device', type=str, default='cuda')
 parser.add_argument('--experiment_name', type=str, default=None)
-parser.add_argument('--lr', type=float, default=0.0005)
+parser.add_argument('--lr', type=float, default=None)
 
 args = parser.parse_args()
 config_path = args.config

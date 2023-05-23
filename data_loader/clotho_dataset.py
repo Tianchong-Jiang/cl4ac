@@ -67,7 +67,7 @@ class ClothoDataset(Dataset):
                                                                 'caption_index': caption_index})
         self.random_sample_list = self.audio_captions.copy()
 
-    def get_word_frequency(self, tokenizer):
+    def get_word_frequency(self, tokenizer, config):
         all_captions = [audio_caption['caption'] for audio_caption in self.audio_captions]
         tokenized = tokenizer(all_captions, add_special_tokens=False)
         tokenized = tokenized['input_ids']
@@ -79,7 +79,7 @@ class ClothoDataset(Dataset):
         for token in uniq_tokens:
             number = np.count_nonzero(tokenized == token)
             # make weight softer
-            ratio[token] = math.log(1 / (number / (total + 1)))
+            ratio[token] = math.log(1 / (number / (total + 1))) ** config.training.activate_weight_on_loss.alpha
         return ratio
 
     def __len__(self):
