@@ -82,3 +82,6 @@ auxiliary_task:
   pooling_type: 'mean'
   selection_loss: Yes
   use_last_hidden: Yes
+
+experiment:
+  name: 'test'

@@ -1,5 +1,5 @@
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "3" #str(cvd)
+os.environ["CUDA_VISIBLE_DEVICES"] = "0" #str(cvd)
 import argparse
 from config_loader.config import get_config
 from trainer.trainer import train
@@ -38,7 +38,6 @@ if lr is not None:
     config.optimizer.lr = lr
 if experiment_name is not None:
     config.experiment.name = experiment_name
-config.experiment.name = "{}-LR{}".format(config.experiment.name, config.optimizer.lr)
 
 
 # from params_proto.hyper import Sweep

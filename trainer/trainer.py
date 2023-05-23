@@ -63,6 +63,12 @@ def train(config, device):
                     position=0, leave=True, ascii=True, desc="Epoch {}".format(epoch))
         if config.optimizer.warm_up.enable:
             scheduler_warmup.step(epoch + 1)
+
+        # model_path = f'/models/{config.experiment.name}-{current_time}/'
+        # os.makedirs(model_path, exist_ok=True)
+        # model_path += "{:04d}.pt".format(epoch)
+        # save_model(model_path, model, optimizer, epoch, config, np.asarray(epoch_loss).mean())
+
         for data in pbar:
             model.train()
             optimizer.zero_grad()
@@ -131,6 +137,7 @@ def train(config, device):
             optimizer.step()
             logger.add_train_loss(loss.detach().cpu().item(), steps)
             logger.add_train_grad(gradients, steps)
+            pdb.set_trace()
             first_token_ids = torch.argmax(y_hat, dim=-1).detach().cpu().numpy().tolist()[0]
             pbar.set_postfix_str("loss: {:.4f}, gradient: {:.4f} pred: {}".format(
                 loss.detach().cpu().item(), gradients,
@@ -140,6 +147,14 @@ def train(config, device):
 
             # log loss
             wandb.log({"loss": loss, "step": steps})
+
+            # log text output
+            if steps % 10 == 0:
+                # pdb.set_trace()
+                table = wandb.Table(columns=["Step", "Text"])
+                table.add_data(str(steps), tokenizer.decode(first_token_ids))
+                wandb.log({"Text output": table})
+                # wandb.log({"text": tokenizer.decode(first_token_ids), "step": steps})
 
         # valid_metrics, valid_ground_truth, valid_predicted, beam_valid_metrics, beam_valid_predicted = eval_model(model,
         #                                                                                                           valid_loader,
@@ -168,10 +183,10 @@ def train(config, device):
         # print(logger.format_metrics('test', test_metrics))
         # print(logger.format_metrics('beam_test', beam_test_metrics))
         # Save model every epoch
-        model_path = 'saved_models/{}-{}/'.format(config.experiment.name, current_time)
-        os.makedirs(model_path, exist_ok=True)
-        model_path += "{:04d}.pt".format(epoch)
-        save_model(model_path, model, optimizer, epoch, config, np.asarray(epoch_loss).mean())
+        # model_path = f'/models/{config.experiment.name}-{current_time}/'
+        # os.makedirs(model_path, exist_ok=True)
+        # model_path += "{:04d}.pt".format(epoch)
+        # save_model(model_path, model, optimizer, epoch, config, np.asarray(epoch_loss).mean())
 
 
 def setup_seed(seed):
