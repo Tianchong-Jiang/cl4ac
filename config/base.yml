@@ -68,6 +68,9 @@ training:
     reduce_punc_weight: No
     reduce_stopwords_weight: No
 
+sampling:
+  topk: 10
+
 
 w2v:
   enable: No
@@ -79,6 +82,7 @@ multisos:
   enable: No
 
 auxiliary_task:
+  weight_factor: 10
   pooling_type: 'mean'
   selection_loss: Yes
   use_last_hidden: Yes

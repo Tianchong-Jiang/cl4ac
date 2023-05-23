@@ -107,6 +107,7 @@ def train(config, device):
                 pos_neg_selection_scores = torch.cat([selection_score, negative_selection_score])
                 selection_loss = auxilary_criteria(pos_neg_selection_scores,
                                           torch.tensor(selection_labels).to(device).contiguous().view(-1))
+                selection_loss = selection_loss * config.auxiliary_task.weight_factor
             if config.bert.auto_regression and config.bert.auto_regressive_gamma < 1.0:
                 losses = None
                 for batch_index in range(y_hat.shape[0]):
@@ -137,11 +138,17 @@ def train(config, device):
             optimizer.step()
             logger.add_train_loss(loss.detach().cpu().item(), steps)
             logger.add_train_grad(gradients, steps)
-            pdb.set_trace()
-            first_token_ids = torch.argmax(y_hat, dim=-1).detach().cpu().numpy().tolist()[0]
+
+            # sampling from the top-k tokens
+            if config.sampling.topk > 1:
+                topk_indices = torch.topk(y_hat, k=config.sampling.topk, dim=-1).indices.detach().cpu().numpy()
+                random_indices = np.random.randint(0, config.sampling.topk, size=(topk_indices.shape[1]))
+                token_ids = topk_indices[:, np.arange(topk_indices.shape[1]), random_indices][0].tolist()
+            else:
+                token_ids = torch.argmax(y_hat, dim=-1).detach().cpu().numpy().tolist()[0]
             pbar.set_postfix_str("loss: {:.4f}, gradient: {:.4f} pred: {}".format(
                 loss.detach().cpu().item(), gradients,
-                tokenizer.decode(first_token_ids)
+                tokenizer.decode(token_ids)
             ))
             steps += 1
 
@@ -152,7 +159,7 @@ def train(config, device):
             if steps % 10 == 0:
                 # pdb.set_trace()
                 table = wandb.Table(columns=["Step", "Text"])
-                table.add_data(str(steps), tokenizer.decode(first_token_ids))
+                table.add_data(str(steps), tokenizer.decode(token_ids))
                 wandb.log({"Text output": table})
                 # wandb.log({"text": tokenizer.decode(first_token_ids), "step": steps})
 
