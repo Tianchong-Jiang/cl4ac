@@ -75,20 +75,27 @@ def train(config, device):
                     max_non_pad_indexes[non_pad_index[0]] = non_pad_index[1]
                 neg_non_pad_indexes = (data['negative_inputs'] != tokenizer.pad_token_id).nonzero()
                 max_neg_non_pad_indexes = torch.zeros((data['negative_inputs'].shape[0]))
+
                 for non_pad_index in neg_non_pad_indexes.detach().cpu().numpy().tolist():
                     max_neg_non_pad_indexes[non_pad_index[0]] = non_pad_index[1]
+
+            if max_non_pad_indexes is not None:
+                max_non_pad_indexes=max_non_pad_indexes.to(device)
+
+            if max_neg_non_pad_indexes is not None:
+                max_neg_non_pad_indexes=max_neg_non_pad_indexes.to(device)
 
             y_hat = model(data['audio_embedding'].to(device), data['inputs'].to(device),
                           attention_mask=attention_mask,
                           selection_result=config.auxiliary_task.selection_loss,
-                          max_non_pad_indexes=max_non_pad_indexes.to(device))
+                          max_non_pad_indexes=max_non_pad_indexes)
             if config.auxiliary_task.selection_loss:
                 y_hat, selection_score = y_hat
                 _, negative_selection_score = model(data['audio_embedding'].to(device),
                                                     data['negative_inputs'].to(device),
                                                     attention_mask=attention_mask,
                                                     selection_result=config.auxiliary_task.selection_loss,
-                                                    max_non_pad_indexes=max_neg_non_pad_indexes.to(device))
+                                                    max_non_pad_indexes=max_neg_non_pad_indexes)
                 selection_labels = [1] * selection_score.shape[0] + [0] * negative_selection_score.shape[0]
                 pos_neg_selection_scores = torch.cat([selection_score, negative_selection_score])
                 selection_loss = criteria(pos_neg_selection_scores,

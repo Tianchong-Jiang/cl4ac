@@ -33,8 +33,8 @@ bert:
   # Will use [SEP] instead of [MASK], Only available in non-autoregressive
   use_sep_as_pad: No
   use_custom_tokenizer: No
-  auto_regressive: No
-  auto_regressive_gamma: 1
+  auto_regressive: Yes
+  auto_regressive_gamma: 0.9
 
 
 decoder:
@@ -63,13 +63,10 @@ training:
   # Will reduce the weight on [PAD] a an the ...
   # Will increase the weight caption words
   activate_weight_on_loss:
-    enable: Yes
+    enable: No
     reduce_punc_weight: No
     reduce_stopwords_weight: No
 
-dataset:
-  audio_h5_path: 'data/logspectrogram/log_melspectrogram.h5'
-  wave_name_path: 'data/logspectrogram/wav_names.p'
 
 w2v:
   enable: No
@@ -81,5 +78,6 @@ multisos:
   enable: No
 
 auxiliary_task:
-  selection_loss: No
-  use_last_hidden: No
+  pooling_type: 'max'
+  selection_loss: Yes
+  use_last_hidden: Yes

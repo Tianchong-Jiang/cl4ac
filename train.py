@@ -1,20 +1,20 @@
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "1" #str(cvd)
 import argparse
 from config_loader.config import get_config
 from trainer.trainer import train
 from utils.parser_helper import str2bool
-import os
 import wandb
 # import Args
-import torch
 # import Path
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--config', default= 'cl4ac/config/w2v-trainable-selection-loss-last-hidden.yml')
+parser.add_argument('--config', default= 'cl4ac/config/base.yml')
 parser.add_argument('--freeze_bert', type=str2bool, default=None)
 parser.add_argument('--freeze_cnn', type=str2bool, default=None)
-parser.add_argument('--batch', type=int, default=16)
+parser.add_argument('--batch', type=int, default=4)
 parser.add_argument('--device', type=str, default='cuda')
 parser.add_argument('--experiment_name', type=str, default=None)
 parser.add_argument('--lr', type=float, default=0.0005)
@@ -75,9 +75,9 @@ config.experiment.name = "{}-LR{}".format(config.experiment.name, config.optimiz
 #         f.write(wandb_runid)
 
 # if 'CUDA_VISIBLE_DEVICES' not in os.environ:
-#     avail_gpus = [3]
-#     cvd = avail_gpus[args.line_number % len(avail_gpus)]
-#     os.environ["CUDA_VISIBLE_DEVICES"] = '3'#str(cvd)
+    # avail_gpus = [3]
+    # cvd = avail_gpus[args.line_number % len(avail_gpus)]
+# os.environ["CUDA_VISIBLE_DEVICES"] = "1" #str(cvd)
 # Args.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # sweep_basename = Path(args.sweep_file).stem

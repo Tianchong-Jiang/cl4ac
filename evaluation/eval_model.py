@@ -41,6 +41,7 @@ def eval_model(model, dataloader, tokenizer, config, device):
                                                               max_length=config.decoder.max_length)
 
         else:
+            import pdb; pdb.set_trace()
             raise ValueError("Temporarily only support auto regressive way!")
             # with torch.no_grad():
             #     y_hat = model(eval_data['audio_embedding'].to(device), eval_data['inputs'].to(device))

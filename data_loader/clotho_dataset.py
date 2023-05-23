@@ -42,6 +42,29 @@ class ClothoDataset(Dataset):
         else:
             self.audio_captions, self.filename_with_captions = read_cloth_file(caption_path)
         self.auto_regressive = config.bert.auto_regressive
+        if config.bert.auto_regressive and is_train:
+            print("Generating auto regressive training dataset")
+            self.audio_captions_auto_regressive = []
+            if tokenizer is None:
+                raise ValueError("Need to have a tokenizer for pre-processing")
+            for audio_caption in tqdm(self.audio_captions):
+                audio = audio_caption['audio']
+                caption = audio_caption['caption']
+                caption_index = None
+                if config.multisos.enable:
+                    caption_index = audio_caption['caption_index']
+                tokenized = tokenizer(caption, padding='max_length', max_length=config.decoder.max_length)
+                tokenized_no_padding = tokenizer(caption, padding=False)
+                for index in range(len(tokenized_no_padding['input_ids']) - 1):
+                    inputs = tokenized['input_ids'][:index + 1]
+                    targets = tokenized['input_ids'][1:index + 2]
+                    attention_mask = [1] * len(inputs) + [0] * (config.decoder.max_length - len(inputs))
+                    inputs = inputs + [tokenizer.mask_token_id] * (config.decoder.max_length - len(inputs))
+                    targets = targets + [tokenizer.mask_token_id] * (config.decoder.max_length - len(targets))
+                    self.audio_captions_auto_regressive.append({'audio': audio, 'caption': caption,
+                                                                'inputs': inputs, 'targets': targets,
+                                                                'attention_mask': attention_mask,
+                                                                'caption_index': caption_index})
         self.random_sample_list = self.audio_captions.copy()
 
     def get_word_frequency(self, tokenizer):
@@ -135,21 +158,19 @@ def collate_fn_with_tokenizer(tokenizer, max_length, input_id_as_empty=False, in
         caption_index = None
         if multisos:
             caption_index = data['caption_index']
-        if 'inputs' in data.keys() and 'targets' in data.keys():
-            return data
+        # if 'inputs' in data.keys() and 'targets' in data.keys():
+        #     return data
         # Because we will discard [CLS] in targets, so we add max_length by 1
         add_special_tokens = True
         if input_id_as_empty:
             add_special_tokens = True
         tokenized = tokenizer(data['caption_text'], return_tensors='pt', add_special_tokens=add_special_tokens,
-                              padding='max_length', max_length=max_length + 1,
-                              caption_index=caption_index)
+                              padding='max_length', max_length=max_length + 1)
         data['targets'] = tokenized['input_ids'][:, 1:]
         if 'negative_caption_text' in data.keys():
             negative_tokenized = tokenizer(data['negative_caption_text'], return_tensors='pt',
                                            add_special_tokens=add_special_tokens,
-                                           padding='max_length', max_length=max_length + 1,
-                                           caption_index=caption_index)
+                                           padding='max_length', max_length=max_length + 1)
             data['negative_targets'] = negative_tokenized['input_ids'][:, 1:]
             data['negative_inputs'] = negative_tokenized['input_ids'][:, :-1]
         if input_id_all_not_empty:

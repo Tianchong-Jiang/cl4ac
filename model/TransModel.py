@@ -123,6 +123,7 @@ class TransformerModel(nn.Module):
         else:
             raise ValueError("Unimplemented Error")
 
+        # self.rs_fc = nn.Linear(self.nhid, 1)
         self.rs_fc = nn.Linear(self.nhid, 2)
         self.init_weights()
 
