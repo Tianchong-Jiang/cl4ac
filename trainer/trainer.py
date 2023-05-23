@@ -119,6 +119,9 @@ def train(config, device):
             else:
                 loss = criteria(y_hat.contiguous().view(-1, y_hat.shape[-1]),
                                 data['targets'].to(device).contiguous().view(-1))
+            wandb.log({"pred_loss": loss, "step": steps})
+            wandb.log({"selection_los": selection_loss, "step": steps})
+
             if config.auxiliary_task.selection_loss:
                 loss += selection_loss
             loss.backward()
@@ -138,37 +141,37 @@ def train(config, device):
             # log loss
             wandb.log({"loss": loss, "step": steps})
 
-        valid_metrics, valid_ground_truth, valid_predicted, beam_valid_metrics, beam_valid_predicted = eval_model(model,
-                                                                                                                  valid_loader,
-                                                                                                                  tokenizer,
-                                                                                                                  config,
-                                                                                                                  device)
-        test_metrics, test_ground_truth, test_predicted, beam_test_metrics, beam_test_predicted = eval_model(model,
-                                                                                                             test_loader,
-                                                                                                             tokenizer,
-                                                                                                             config,
-                                                                                                             device)
-        logger.add_metrics('valid', valid_metrics, steps)
-        logger.add_metrics('test', test_metrics, steps)
-        logger.add_metrics('beam_valid', beam_valid_metrics, steps)
-        logger.add_metrics('beam_test', beam_test_metrics, steps)
-        logger.generate_captions('valid_{}_Epoch{:03d}'.format(config.experiment.name, epoch), valid_ground_truth,
-                                 valid_predicted)
-        logger.generate_captions('test_{}_Epoch{:03d}'.format(config.experiment.name, epoch), test_ground_truth,
-                                 test_predicted)
-        logger.generate_captions('valid_{}_Epoch{:03d}_beam'.format(config.experiment.name, epoch), valid_ground_truth,
-                                 beam_valid_predicted)
-        logger.generate_captions('test_{}_Epoch{:03d}_beam'.format(config.experiment.name, epoch), test_ground_truth,
-                                 beam_test_predicted)
-        print(logger.format_metrics('valid', valid_metrics))
-        print(logger.format_metrics('beam_valid', beam_valid_metrics))
-        print(logger.format_metrics('test', test_metrics))
-        print(logger.format_metrics('beam_test', beam_test_metrics))
+        # valid_metrics, valid_ground_truth, valid_predicted, beam_valid_metrics, beam_valid_predicted = eval_model(model,
+        #                                                                                                           valid_loader,
+        #                                                                                                           tokenizer,
+        #                                                                                                           config,
+        #                                                                                                           device)
+        # test_metrics, test_ground_truth, test_predicted, beam_test_metrics, beam_test_predicted = eval_model(model,
+        #                                                                                                      test_loader,
+        #                                                                                                      tokenizer,
+        #                                                                                                      config,
+        #                                                                                                      device)
+        # logger.add_metrics('valid', valid_metrics, steps)
+        # logger.add_metrics('test', test_metrics, steps)
+        # logger.add_metrics('beam_valid', beam_valid_metrics, steps)
+        # logger.add_metrics('beam_test', beam_test_metrics, steps)
+        # logger.generate_captions('valid_{}_Epoch{:03d}'.format(config.experiment.name, epoch), valid_ground_truth,
+        #                          valid_predicted)
+        # logger.generate_captions('test_{}_Epoch{:03d}'.format(config.experiment.name, epoch), test_ground_truth,
+        #                          test_predicted)
+        # logger.generate_captions('valid_{}_Epoch{:03d}_beam'.format(config.experiment.name, epoch), valid_ground_truth,
+        #                          beam_valid_predicted)
+        # logger.generate_captions('test_{}_Epoch{:03d}_beam'.format(config.experiment.name, epoch), test_ground_truth,
+        #                          beam_test_predicted)
+        # print(logger.format_metrics('valid', valid_metrics))
+        # print(logger.format_metrics('beam_valid', beam_valid_metrics))
+        # print(logger.format_metrics('test', test_metrics))
+        # print(logger.format_metrics('beam_test', beam_test_metrics))
         # Save model every epoch
-        # model_path = 'saved_models/{}-{}/'.format(config.experiment.name, current_time)
-        # os.makedirs(model_path, exist_ok=True)
-        # model_path += "{:04d}.pt".format(epoch)
-        # save_model(model_path, model, optimizer, epoch, config, np.asarray(epoch_loss).mean())
+        model_path = 'saved_models/{}-{}/'.format(config.experiment.name, current_time)
+        os.makedirs(model_path, exist_ok=True)
+        model_path += "{:04d}.pt".format(epoch)
+        save_model(model_path, model, optimizer, epoch, config, np.asarray(epoch_loss).mean())
 
 
 def setup_seed(seed):

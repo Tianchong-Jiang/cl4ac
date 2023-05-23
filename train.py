@@ -1,5 +1,5 @@
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "0" #str(cvd)
+os.environ["CUDA_VISIBLE_DEVICES"] = "3" #str(cvd)
 import argparse
 from config_loader.config import get_config
 from trainer.trainer import train

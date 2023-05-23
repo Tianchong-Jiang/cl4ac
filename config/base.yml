@@ -58,13 +58,13 @@ training:
   epoch: 30
   seed: 36
   grad_clip: 10.0
-  batch_size: 4
+  batch_size: 32
   beam_width: 2
   # Will reduce the weight on [PAD] a an the ...
   # Will increase the weight caption words
   activate_weight_on_loss:
     enable: Yes
-    alpha: 5
+    alpha: 4
     reduce_punc_weight: No
     reduce_stopwords_weight: No
 

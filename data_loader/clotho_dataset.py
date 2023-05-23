@@ -14,7 +14,7 @@ import random
 def read_cloth_file(filename, audio_loader=None):
     all_captions = []
     filename_with_captions = []
-    with open(filename + '/prompts_10per_filtered.csv', 'r') as file:
+    with open(filename + '/prompts.csv', 'r') as file:
         reader = csv.reader(file)
         next(reader, None)
         for row in reader:
