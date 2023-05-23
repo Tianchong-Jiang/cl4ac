@@ -11,22 +11,22 @@ from data_loader.logmel_loader import LogmelLoader
 from data_loader.sample import Sample
 import random
 
-
 def read_cloth_file(filename, audio_loader=None):
     all_captions = []
     filename_with_captions = []
-    with open(filename, 'r') as file:
+    with open(filename + '/prompts_10per_filtered.csv', 'r') as file:
         reader = csv.reader(file)
         next(reader, None)
         for row in reader:
             name_with_captions = {'file_name': row[0]}
-            for index, caption in enumerate(row[1:]):
-                audio_caption = {'audio': row[0], 'caption': caption, 'caption_index': index}
-                if audio_loader is not None:
-                    audio_caption['audio_embedding'] = audio_loader.get_embedding(row[0])
-                all_captions.append(audio_caption)
-                name_with_captions['caption_{}'.format(index + 1)] = caption
-                name_with_captions['caption_index'] = index
+            index = int(row[1])
+            caption = row[2]
+            audio_caption = {'audio': row[0], 'caption': caption, 'caption_index': index}
+            if audio_loader is not None:
+                audio_caption['audio_embedding'] = audio_loader.get_embedding(row[0])
+            all_captions.append(audio_caption)
+            name_with_captions['caption_{}'.format(index + 1)] = caption
+            name_with_captions['caption_index'] = index
             filename_with_captions.append(name_with_captions)
     return all_captions, filename_with_captions
 
@@ -42,30 +42,6 @@ class ClothoDataset(Dataset):
         else:
             self.audio_captions, self.filename_with_captions = read_cloth_file(caption_path)
         self.auto_regressive = config.bert.auto_regressive
-        if config.bert.auto_regressive and is_train:
-            print("Generating auto regressive training dataset")
-            self.audio_captions_auto_regressive = []
-            if tokenizer is None:
-                raise ValueError("Need to have a tokenizer for pre-processing")
-            for audio_caption in tqdm(self.audio_captions):
-                audio = audio_caption['audio']
-                caption = audio_caption['caption']
-                caption_index = None
-                if config.multisos.enable:
-                    caption_index = audio_caption['caption_index']
-                tokenized = tokenizer(caption, padding='max_length', max_length=config.decoder.max_length,
-                                      caption_index=caption_index)
-                tokenized_no_padding = tokenizer(caption, padding=False, caption_index=caption_index)
-                for index in range(len(tokenized_no_padding['input_ids']) - 1):
-                    inputs = tokenized['input_ids'][:index + 1]
-                    targets = tokenized['input_ids'][1:index + 2]
-                    attention_mask = [1] * len(inputs) + [0] * (config.decoder.max_length - len(inputs))
-                    inputs = inputs + [tokenizer.mask_token_id] * (config.decoder.max_length - len(inputs))
-                    targets = targets + [tokenizer.mask_token_id] * (config.decoder.max_length - len(targets))
-                    self.audio_captions_auto_regressive.append({'audio': audio, 'caption': caption,
-                                                                'inputs': inputs, 'targets': targets,
-                                                                'attention_mask': attention_mask,
-                                                                'caption_index': caption_index})
         self.random_sample_list = self.audio_captions.copy()
 
     def get_word_frequency(self, tokenizer):
@@ -148,7 +124,7 @@ def collate_fn(sample_list):
         if flatten_samples[-1].__class__ == str:
             data[key] = flatten_samples
         else:
-            data[key] = torch.tensor(flatten_samples)
+            data[key] = torch.tensor(np.array(flatten_samples))
     return data
 
 

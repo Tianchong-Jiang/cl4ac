@@ -4,20 +4,20 @@ from trainer.trainer import train
 from utils.parser_helper import str2bool
 import os
 import wandb
-import Args
+# import Args
 import torch
-import Path
+# import Path
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--config')
+parser.add_argument('--config', default= 'cl4ac/config/w2v-trainable-selection-loss-last-hidden.yml')
 parser.add_argument('--freeze_bert', type=str2bool, default=None)
 parser.add_argument('--freeze_cnn', type=str2bool, default=None)
-parser.add_argument('--batch', type=int, default=None)
+parser.add_argument('--batch', type=int, default=16)
 parser.add_argument('--device', type=str, default='cuda')
 parser.add_argument('--experiment_name', type=str, default=None)
-parser.add_argument('--lr', type=float, default=None)
+parser.add_argument('--lr', type=float, default=0.0005)
 
 args = parser.parse_args()
 config_path = args.config

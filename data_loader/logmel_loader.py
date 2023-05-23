@@ -20,7 +20,7 @@ import numpy as np
 class LogmelLoader:
     def __init__(self, path):
         self.path = path
-        with open(path, 'rb') as f:
+        with open(path + '/spec.pickle', 'rb') as f:
             self.logmelspec = pickle.load(f)
 
     def get_embedding(self, audio_name):
@@ -30,7 +30,7 @@ class LogmelLoader:
 
 
 if __name__ == '__main__':
-    path = '/data/spec.pickle'
+    path = '/data'
     loader = LogmelLoader(path)
     wav_name = '-0SdAVK79lg'
     embedding = loader.get_embedding(wav_name)

@@ -57,7 +57,7 @@ class TransformerModel(nn.Module):
             raise NameError('No such Cnn.')
 
         # Loading pretrained feature extractor parameters
-        pretrained_cnn = torch.load('data/pretrained_models/encoder/' + config.encoder.name + '.pth')['model']
+        pretrained_cnn = torch.load('cl4ac/data/pretrained_models/encoder/' + config.encoder.name + '.pth')['model']
 
         dict_trained = pretrained_cnn
         dict_new = self.feature_extractor.state_dict().copy()

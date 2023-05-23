@@ -28,7 +28,7 @@ class Word2Vec:
     def generate_embedding_layer(self, hidden_size, trainable=False):
         weights = torch.randn(len(self.vocabulary), hidden_size)
         for i, word in enumerate(self.vocabulary):
-            embedding = self.w2v_model[word]
+            embedding = self.w2v_model.wv.get_vector(word)
             weights[i] = torch.from_numpy(embedding)
         word_emb = torch.nn.Embedding.from_pretrained(weights)
         word_emb.weight.requires_grad = trainable
@@ -47,7 +47,13 @@ class Word2Vec:
             words += [padding_token] * (padding - len(words))
         if len(words) > padding > 0:
             raise ValueError("Sentence Length exceeds padding length!")
-        indexes = [self.vocabulary.index(w) for w in words]
+        indexes = []
+        for w in words:
+            # use the most similar word if the word is not in the vocabulary
+            if w not in self.vocabulary:
+                w = '<eos>'
+            indexes.append(self.vocabulary.index(w))
+        # indexes = [self.vocabulary.index(w) for w in words]
         if return_index:
             return indexes
         else:
@@ -64,6 +70,7 @@ class Word2Vec:
             max_length = -1
         text = args[0]
         tokenized = {}
+        # print(text)
         if text.__class__ == str:
             tokenized['input_ids'] = self.encode_sentence(text, padding=max_length,
                                                           add_special_tokens=add_special_tokens,

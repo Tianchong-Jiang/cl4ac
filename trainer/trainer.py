@@ -17,6 +17,7 @@ from utils.save_load_model import save_model
 from w2v_tools.w2v_model import Word2Vec
 import os
 import wandb
+import pdb
 
 
 def train(config, device):
@@ -25,20 +26,17 @@ def train(config, device):
     setup_seed(config.training.seed)
     if config.w2v.enable:
         tokenizer = Word2Vec(w2v_model_path=config.w2v.w2v_path, multisos=config.multisos.enable)
-    elif config.bert.use_custom_tokenizer:
-        tokenizer = CUSTOM_TOKENIZER
     else:
         tokenizer = AutoTokenizer.from_pretrained(config.bert.bert_path)
-    train_dataset = ClothoDataset('data/clotho_captions_train.txt', config,
+    train_dataset = ClothoDataset('/data', config,
                                   tokenizer=tokenizer)
-    valid_dataset = ClothoDataset('data/clotho_captions_valid.txt', config,
+    valid_dataset = ClothoDataset('/data', config,
                                   tokenizer=tokenizer, is_train=False)
-    test_dataset = ClothoDataset('data/clotho_captions_test.txt', config,
+    test_dataset = ClothoDataset('/data', config,
                                  tokenizer=tokenizer, is_train=False)
     train_loader = get_dataloader(train_dataset, config, tokenizer, is_train=True, multisos=config.multisos.enable)
     valid_loader = get_dataloader(valid_dataset, config, tokenizer, is_train=False, multisos=config.multisos.enable)
     test_loader = get_dataloader(test_dataset, config, tokenizer, is_train=False, multisos=config.multisos.enable)
-
     model = TransformerModel(config).to(device)
     criteria = get_loss(config)
     optimizer = get_optimizer(config, model)
