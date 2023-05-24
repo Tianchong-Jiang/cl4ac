@@ -11,7 +11,7 @@ from data_loader.logmel_loader import LogmelLoader
 from data_loader.sample import Sample
 import random
 
-def read_cloth_file(filename, audio_loader=None):
+def read_cloth_file(filename, audio_loader = None, is_train = True):
     all_captions = []
     filename_with_captions = []
     with open(filename + '/prompts.csv', 'r') as file:
@@ -19,6 +19,15 @@ def read_cloth_file(filename, audio_loader=None):
         next(reader, None)
         for row in reader:
             name_with_captions = {'file_name': row[0]}
+
+            # index of the the sample in category
+            # e.g. Dog_1.wav -> 1
+            index_in_category = int(row[0].split('_')[-1])
+
+            # first 10 samples are for testing
+            if is_train and index_in_category < 10:
+                continue
+
             index = int(row[1])
             caption = row[2]
             audio_caption = {'audio': row[0], 'caption': caption, 'caption_index': index}
@@ -37,12 +46,10 @@ class ClothoDataset(Dataset):
         self.caption_path = caption_path
         self.is_train = is_train
         self.audio_loader = LogmelLoader(caption_path)
-        if is_train:
-            self.audio_captions, self.filename_with_captions = read_cloth_file(caption_path, self.audio_loader)
-        else:
-            self.audio_captions, self.filename_with_captions = read_cloth_file(caption_path)
+        self.audio_captions, self.filename_with_captions = read_cloth_file(caption_path, self.audio_loader, is_train = is_train)
+
         self.auto_regressive = config.bert.auto_regressive
-        if config.bert.auto_regressive and is_train:
+        if config.bert.auto_regressive:
             print("Generating auto regressive training dataset")
             self.audio_captions_auto_regressive = []
             if tokenizer is None:

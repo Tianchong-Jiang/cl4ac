@@ -71,6 +71,8 @@ training:
 sampling:
   topk: 10
 
+testing:
+  epoch: 10
 
 w2v:
   enable: No

@@ -16,6 +16,7 @@ from trainer.optimizer import get_optimizer
 from utils.save_load_model import save_model
 from w2v_tools.w2v_model import Word2Vec
 import os
+import csv
 import wandb
 import pdb
 
@@ -30,12 +31,9 @@ def train(config, device):
         tokenizer = AutoTokenizer.from_pretrained(config.bert.bert_path)
     train_dataset = ClothoDataset('/data', config,
                                   tokenizer=tokenizer)
-    valid_dataset = ClothoDataset('/data', config,
-                                  tokenizer=tokenizer, is_train=False)
     test_dataset = ClothoDataset('/data', config,
                                  tokenizer=tokenizer, is_train=False)
     train_loader = get_dataloader(train_dataset, config, tokenizer, is_train=True, multisos=config.multisos.enable)
-    valid_loader = get_dataloader(valid_dataset, config, tokenizer, is_train=False, multisos=config.multisos.enable)
     test_loader = get_dataloader(test_dataset, config, tokenizer, is_train=False, multisos=config.multisos.enable)
     model = TransformerModel(config).to(device)
     auxilary_criteria = get_loss(config)
@@ -63,11 +61,6 @@ def train(config, device):
                     position=0, leave=True, ascii=True, desc="Epoch {}".format(epoch))
         if config.optimizer.warm_up.enable:
             scheduler_warmup.step(epoch + 1)
-
-        # model_path = f'/models/{config.experiment.name}-{current_time}/'
-        # os.makedirs(model_path, exist_ok=True)
-        # model_path += "{:04d}.pt".format(epoch)
-        # save_model(model_path, model, optimizer, epoch, config, np.asarray(epoch_loss).mean())
 
         for data in pbar:
             model.train()
@@ -146,6 +139,8 @@ def train(config, device):
                 token_ids = topk_indices[:, np.arange(topk_indices.shape[1]), random_indices][0].tolist()
             else:
                 token_ids = torch.argmax(y_hat, dim=-1).detach().cpu().numpy().tolist()[0]
+
+            # show the output text on progress bar
             pbar.set_postfix_str("loss: {:.4f}, gradient: {:.4f} pred: {}".format(
                 loss.detach().cpu().item(), gradients,
                 tokenizer.decode(token_ids)
@@ -161,39 +156,64 @@ def train(config, device):
                 table = wandb.Table(columns=["Step", "Text"])
                 table.add_data(str(steps), tokenizer.decode(token_ids))
                 wandb.log({"Text output": table})
-                # wandb.log({"text": tokenizer.decode(first_token_ids), "step": steps})
 
-        # valid_metrics, valid_ground_truth, valid_predicted, beam_valid_metrics, beam_valid_predicted = eval_model(model,
-        #                                                                                                           valid_loader,
-        #                                                                                                           tokenizer,
-        #                                                                                                           config,
-        #                                                                                                           device)
-        # test_metrics, test_ground_truth, test_predicted, beam_test_metrics, beam_test_predicted = eval_model(model,
-        #                                                                                                      test_loader,
-        #                                                                                                      tokenizer,
-        #                                                                                                      config,
-        #                                                                                                      device)
-        # logger.add_metrics('valid', valid_metrics, steps)
-        # logger.add_metrics('test', test_metrics, steps)
-        # logger.add_metrics('beam_valid', beam_valid_metrics, steps)
-        # logger.add_metrics('beam_test', beam_test_metrics, steps)
-        # logger.generate_captions('valid_{}_Epoch{:03d}'.format(config.experiment.name, epoch), valid_ground_truth,
-        #                          valid_predicted)
-        # logger.generate_captions('test_{}_Epoch{:03d}'.format(config.experiment.name, epoch), test_ground_truth,
-        #                          test_predicted)
-        # logger.generate_captions('valid_{}_Epoch{:03d}_beam'.format(config.experiment.name, epoch), valid_ground_truth,
-        #                          beam_valid_predicted)
-        # logger.generate_captions('test_{}_Epoch{:03d}_beam'.format(config.experiment.name, epoch), test_ground_truth,
-        #                          beam_test_predicted)
-        # print(logger.format_metrics('valid', valid_metrics))
-        # print(logger.format_metrics('beam_valid', beam_valid_metrics))
-        # print(logger.format_metrics('test', test_metrics))
-        # print(logger.format_metrics('beam_test', beam_test_metrics))
-        # Save model every epoch
-        # model_path = f'/models/{config.experiment.name}-{current_time}/'
-        # os.makedirs(model_path, exist_ok=True)
-        # model_path += "{:04d}.pt".format(epoch)
-        # save_model(model_path, model, optimizer, epoch, config, np.asarray(epoch_loss).mean())
+    # evaluate (inference)
+    pbar_test = tqdm(test_loader, total=test_loader.__len__(),
+                position=0, leave=True, ascii=True, desc="Epoch {}".format(epoch))
+    model.eval()
+    output = []
+    for epoch in range(config.testing.epoch):
+        for test_data in pbar_test:
+            attention_mask = None if 'attention_mask' not in test_data.keys() else test_data['attention_mask'].to(device)
+            max_non_pad_indexes = None
+            max_neg_non_pad_indexes = None
+            if config.auxiliary_task.use_last_hidden:
+                non_pad_indexes = (test_data['inputs'] != tokenizer.pad_token_id).nonzero()
+                max_non_pad_indexes = torch.zeros((test_data['inputs'].shape[0]))
+                for non_pad_index in non_pad_indexes.detach().cpu().numpy().tolist():
+                    max_non_pad_indexes[non_pad_index[0]] = non_pad_index[1]
+                neg_non_pad_indexes = (test_data['negative_inputs'] != tokenizer.pad_token_id).nonzero()
+                max_neg_non_pad_indexes = torch.zeros((test_data['negative_inputs'].shape[0]))
+
+                for non_pad_index in neg_non_pad_indexes.detach().cpu().numpy().tolist():
+                    max_neg_non_pad_indexes[non_pad_index[0]] = non_pad_index[1]
+
+            if max_non_pad_indexes is not None:
+                max_non_pad_indexes=max_non_pad_indexes.to(device)
+
+            if max_neg_non_pad_indexes is not None:
+                max_neg_non_pad_indexes=max_neg_non_pad_indexes.to(device)
+
+            y_hat, _ = model(test_data['audio_embedding'].to(device), test_data['inputs'].to(device),
+                            attention_mask=attention_mask,
+                            selection_result=config.auxiliary_task.selection_loss,
+                            max_non_pad_indexes=max_non_pad_indexes)
+
+            if config.sampling.topk > 1:
+                topk_indices = torch.topk(y_hat, k=config.sampling.topk, dim=-1).indices.detach().cpu().numpy()
+                random_indices = np.random.randint(0, config.sampling.topk, size=(topk_indices.shape[1]))
+                token_ids = topk_indices[:, np.arange(topk_indices.shape[1]), random_indices].tolist()
+            else:
+                token_ids = torch.argmax(y_hat, dim=-1).detach().cpu().numpy().tolist()
+
+            # decode the token ids
+            for i in range(y_hat.shape[0]):
+                text = tokenizer.decode(token_ids[i])
+                output.append([test_data['filename'][i], epoch, text])
+
+            pbar_test.set_postfix_str("test time, pred: {}".format(
+                tokenizer.decode(token_ids[0])
+            ))
+
+    with open("/rmx/diffuser/output/output_30.csv", 'w') as f:
+        writer = csv.writer(f)
+        writer.writerows(output)
+
+    # Save model after training is done
+    # model_path = f'/rmx/diffuser/output/{config.experiment.name}-{current_time}/'
+    # os.makedirs(model_path, exist_ok=True)
+    # model_path += "{:04d}.pt".format(epoch)
+    # save_model(model_path, model, optimizer, epoch, config, np.asarray(epoch_loss).mean())
 
 
 def setup_seed(seed):
