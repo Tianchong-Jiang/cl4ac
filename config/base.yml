@@ -55,7 +55,7 @@ criteria:
   loss: cross_entropy
 
 training:
-  epoch: 30
+  epoch: 10
   seed: 36
   grad_clip: 10.0
   batch_size: 32

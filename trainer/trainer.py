@@ -205,7 +205,7 @@ def train(config, device):
                 tokenizer.decode(token_ids[0])
             ))
 
-    with open("/rmx/diffuser/output/output_30.csv", 'w') as f:
+    with open("/rmx/diffuser/output/output_10.csv", 'w') as f:
         writer = csv.writer(f)
         writer.writerows(output)
 
